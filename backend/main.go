@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"gith
+	"github.com/goburrow/modbus"
 	"log"
 	"net/http"
 	"time"
