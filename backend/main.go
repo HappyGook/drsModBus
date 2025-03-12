@@ -34,10 +34,6 @@ var registers = []uint16{
 	Force_BAT_UVP_SET,
 }
 
-type Input struct {
-	Number []string `json:"numbers"`
-}
-
 type DRSClient struct {
 	handler *modbus.TCPClientHandler
 	client  modbus.Client
