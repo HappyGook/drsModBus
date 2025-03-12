@@ -3,7 +3,7 @@ import {useEffect, useState} from 'react'
 function App() {
   const [numbers,setNumbers] = useState(Array(8).fill(""));
   const [registers, setRegisters] = useState(Array(8).fill(0));
-  const [error, setError] = useState(null);
+  const [setError] = useState(null);
 
 
   useEffect(()=>{
