@@ -1,7 +1,25 @@
-import { useState } from 'react'
+import {useEffect, useState} from 'react'
 
 function App() {
   const [numbers,setNumbers] = useState(Array(8).fill(""));
+  const [registers, setRegisters] = useState(Array(8).fill(0));
+  const [error, setError] = useState(null);
+
+
+  useEffect(()=>{
+      fetch("/api/read")
+          .then((response)=>response.json())
+          .then((data)=>{
+              if(data.registers) {
+                  setRegisters(data.registers)
+              }else{
+                  setError("Failed to load the register values")
+              }
+          }).catch((err)=>{
+              console.error("Error fetching registers",err)
+              setError("Could not connect to backend")
+      })
+  },[])
 
 
     const handleChange=(index, value)=>{
@@ -32,7 +50,7 @@ function App() {
                           type="number"
                           value={numbers[index]}
                           onChange={(e)=> handleChange(index,e.target.value)}
-                          placeholder={label}
+                          placeholder={registers[index]}
                           style={styles.input}
                       />
                   </div>
