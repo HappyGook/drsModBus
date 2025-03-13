@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/goburrow/modbus"
+	"go.bug.st/serial"
 	"log"
 	"net/http"
 )
@@ -37,6 +39,10 @@ var registers = []uint16{
 type DRSClient struct {
 	handler *modbus.RTUClientHandler
 	client  modbus.Client
+}
+
+func listThePorts() ([]string, error) {
+
 }
 
 func NewDRSClient(port string, baud int) (*DRSClient, error) {
@@ -144,9 +150,23 @@ func handleRead(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"registers": values})
 }
 
+func handleList(c *gin.Context) {
+	ports, err := serial.GetPortsList()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if len(ports) == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "No serial ports found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ports": ports})
+}
+
 func main() {
 	r := gin.Default()
 
+	r.GET("/api/list", handleList)
 	r.POST("/api/submit", handleSubmit)
 	r.GET("/api/read", handleRead)
 
