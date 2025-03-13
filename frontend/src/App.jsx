@@ -1,4 +1,4 @@
-import {use, useEffect, useState} from 'react'
+import {useEffect, useState} from 'react'
 
 function App() {
   const [numbers,setNumbers] = useState(Array(8).fill(""));

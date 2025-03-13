@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/goburrow/modbus"
@@ -39,10 +38,6 @@ var registers = []uint16{
 type DRSClient struct {
 	handler *modbus.RTUClientHandler
 	client  modbus.Client
-}
-
-func listThePorts() ([]string, error) {
-
 }
 
 func NewDRSClient(port string, baud int) (*DRSClient, error) {
