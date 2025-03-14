@@ -1,97 +1,127 @@
 import {useEffect, useState} from 'react'
 
-function App() {
-  const [numbers,setNumbers] = useState(Array(8).fill(""));
-  const [registers, setRegisters] = useState(Array(8).fill(0));
-  const [setError] = useState(null);
-  const [ports,setPorts]=useState([])
+
+const ModBusUI= () =>{
+    const [numbers,setNumbers] = useState(Array(8).fill(""));
+    const [registers, setRegisters] = useState([]);
+    const [error, setError] = useState("");
+    const [ports,setPorts]=useState([])
     const [selectedPort, setSelectedPort]=useState("")
+    const [confirmed, setConfirmed]=useState(null)
 
+    useEffect(()=>{
+        fetch("/api/list")
+            .then(response=>response.json())
+            .then((data)=>{
+                if(data.ports&&data.ports.length>0){
+                    setPorts(data.ports)
+                } else{
+                    setPorts([]) //Just the empty list
+                    setError("No serial ports found")
+                }
+            }).catch((err)=>{
+            console.error("Error fetching ports",err)
+            setError("Could not fetch serial ports")
+            setPorts([]) //Should clear it back to nothing if error occurs
+        })
 
-  useEffect(()=>{
-      fetch("/api/read")
-          .then((response)=>response.json())
-          .then((data)=>{
-              if(data.registers) {
-                  setRegisters(data.registers)
-              }else{
-                  setError("Failed to load the register values")
-              }
-          }).catch((err)=>{
-              console.error("Error fetching registers",err)
-              setError("Could not connect to backend")
-      })
-      fetch("/api/list")
-          .then(response=>response.json())
-          .then((data)=>{
-              if(data.ports){
-                  setPorts(data.ports)
-              } else{
-                  setError("No serial ports found")
-              }
-          }).catch((err)=>{
-              console.error("Error fetching ports",err)
-                setError("Could not fetch serial ports")
-      })
+    },[])
 
-  },[])
+    // Fetch register values only if port is confirmed
+    useEffect(() => {
+        if (confirmed) {
+            fetch(`/api/read?port=${confirmed}`)
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.registers) {
+                        setRegisters(data.registers);
+                    } else {
+                        setError("Failed to load the register values");
+                    }
+                })
+                .catch((err) => {
+                    console.error("Error fetching registers", err);
+                    setError("Could not connect to backend");
+                });
+        }
+    }, [confirmed]);
 
+    //A change of port the user selects
+    const handlePortChange = (event) => {
+        setSelectedPort(event.target.value);
+    };
 
+    // Confirm selected port
+    const handleConfirm = () => {
+        if (selectedPort) {
+            setConfirmed(selectedPort);
+            setError(null); // Clear errors
+        }
+    };
+
+    //A change of number in register input field
     const handleChange=(index, value)=>{
-      const newNumbers=[...numbers];
+        const newNumbers=[...numbers];
         newNumbers[index]=value;
         setNumbers(newNumbers);
     };
 
-    const handleSubmit=async()=>{
-      const response = await fetch("/api/submit",{
-          method:"POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({numbers}),
-      });
-
-      const data = await response.json();
-      console.log("Backend's response: ", data);
+    //Values sent to backend
+    const handleSubmit = () => {
+        if (!confirmed) return;
+        fetch(`/api/submit?port=${confirmed}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ port: selectedPort, values: numbers }),
+        })
+            .then((res) => res.json())
+            .then((data) => console.log("Sent successfully:", data))
+            .catch((err) => console.error("Error sending data:", err));
     };
 
-  return (
-      <div style={styles.container}>
-          <h1 style={styles.title}>ModBus</h1>
+    return (
+        <div style={styles.container}>
+            <h1 style={styles.title}>ModBus</h1>
 
-          <div style={styles.form}>
-              <label style={styles.label}>Select Serial Port</label>
-              <select
-                  style={{ ...styles.selectContainer, cursor: "pointer"}}
-                  value={selectedPort}
-                  onChange={event => setSelectedPort(event.target.value)}
-                  >
-                  <option value="">Select a Port...</option>
-                  {ports.map((port, index)=>(
-                      <option key={index} value={port}>
-                          {port}
-                      </option>
-                  ))}
-              </select>
-          </div>
+            {/* Serial Port Selection */}
+            <div style={styles.portSelection}>
+                <select style={styles.select} value={selectedPort} onChange={handlePortChange}>
+                    <option value="">Select a Serial Port</option>
+                    {ports.map((port, index) => (
+                        <option key={index} value={port}>{port}</option>
+                    ))}
+                </select>
+                <button style={styles.button} onClick={handleConfirm}>Confirm Port</button>
+            </div>
 
-          <div style={styles.form}>
-              {labels.map((label,index)=>(
-                  <div key={index} style={styles.inputRow}>
-                      <label style={styles.label}>{label} </label>
-                      <input
-                          type="number"
-                          value={numbers[index]}
-                          onChange={(e)=> handleChange(index,e.target.value)}
-                          placeholder={registers[index]}
-                          style={styles.input}
-                      />
-                  </div>
-              ))}
-          </div>
-          <button style={styles.button} onClick={handleSubmit}>Send the Values</button>
-      </div>
-  );
-}
+            {error && <p style={styles.error}>{error}</p>}
+
+
+            {/* Only show input fields if port is confirmed */}
+            {confirmed && (
+                <div style={styles.form}>
+                    {labels.map((label, index) => (
+                        <div key={index} style={styles.inputRow}>
+                            <label style={styles.label}>{label} </label>
+                            <input
+                                type="number"
+                                value={numbers[index]}
+                                onChange={(e) => handleChange(index, e.target.value)}
+                                placeholder={registers[index]}
+                                style={styles.input}
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {confirmed && <button style={styles.button} onClick={handleSubmit}>Send the Values</button>}
+        </div>
+    );
+};
+
+
+
 const labels=[
     "Output Voltage set",
     "Constant Voltage setting",
@@ -129,12 +159,20 @@ const styles = {
         width: "100%",
         gap: "15px",
     },
-    selectContainer: {
-        width: "100%",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        marginBottom: "20px",
+    portSelection:{
+      display:"flex",
+      alignItems:"center",
+      gap:"10px",
+      marginBottom:"20px",
+    },
+    confirmButton: {
+        padding: "10px 20px",
+        fontSize: "16px",
+        backgroundColor: "#28a745",
+        color: "#fff",
+        border: "none",
+        cursor: "pointer",
+        borderRadius: "5px",
     },
     inputRow: {
         display: "flex",
@@ -153,7 +191,7 @@ const styles = {
         whiteSpace: "nowrap",
     },
     input: {
-        flex: "2",
+        flex: "1",
         padding: "10px",
         fontSize: "16px",
         border: "1px solid #ccc",
@@ -179,9 +217,10 @@ const styles = {
         cursor: "pointer",
         transition: "background 0.3s",
     },
-    buttonHover: {
-        backgroundColor: "#0056b3",
+    error:{
+        color:"red",
+        marginTop:"10px",
     },
 };
 
-export default App
+export default ModBusUI;

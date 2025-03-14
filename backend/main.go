@@ -19,11 +19,10 @@ const (
 	CURVE_FV_TIMEOUT  = 0x00B7 // FV charge timeout setting
 	BAT_UVP_SET       = 0x00D0 // BAT_LOW protect setting
 	Force_BAT_UVP_SET = 0x00D1 // Force BAT_LOW protect setting
-
-	SERIAL_PORT = "/dev/ttyUSB0"
-	BAUD_RATE   = 9600
+	BAUD_RATE         = 9600
 )
 
+// An array with register names of the meanwell drs
 var registers = []uint16{
 	VOUT_SET,
 	CURVE_CV,
@@ -35,11 +34,13 @@ var registers = []uint16{
 	Force_BAT_UVP_SET,
 }
 
+// DRSClient A general struct with DRS features
 type DRSClient struct {
 	handler *modbus.RTUClientHandler
 	client  modbus.Client
 }
 
+// NewDRSClient Establishing a connection with a DRS using a given port
 func NewDRSClient(port string, baud int) (*DRSClient, error) {
 	handler := modbus.NewRTUClientHandler(port)
 	handler.BaudRate = baud
@@ -57,6 +58,8 @@ func NewDRSClient(port string, baud int) (*DRSClient, error) {
 	return &DRSClient{handler: handler, client: client}, nil
 
 }
+
+// Methods of the Client struct
 
 func (d *DRSClient) Close() {
 	err := d.handler.Close()
@@ -88,8 +91,14 @@ func (d *DRSClient) WriteRegisters(numbers []uint16) error {
 	return nil
 }
 
+// Handling functions
 func handleSubmit(c *gin.Context) {
-	port := SERIAL_PORT
+	port := c.Query("port") // Get port from query parameter
+	if port == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Port is required"})
+		return
+	}
+
 	var data struct {
 		Values []uint16 `json:"values"`
 	}
@@ -125,7 +134,11 @@ func handleSubmit(c *gin.Context) {
 }
 
 func handleRead(c *gin.Context) {
-	port := SERIAL_PORT
+	port := c.Query("port") // Get port from query parameter
+	if port == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Port is required"})
+		return
+	}
 
 	drs, err := NewDRSClient(port, BAUD_RATE)
 	if err != nil {
