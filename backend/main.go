@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-// REGISTER ID's AND PLACEHOLDERS!!!!
+// REGISTER ID's
 const (
 	VOUT_SET          = 0x0020 //Output Voltage set
 	CURVE_CV          = 0x00B1 // Constant voltage setting
@@ -19,7 +19,7 @@ const (
 	CURVE_FV_TIMEOUT  = 0x00B7 // FV charge timeout setting
 	BAT_UVP_SET       = 0x00D0 // BAT_LOW protect setting
 	Force_BAT_UVP_SET = 0x00D1 // Force BAT_LOW protect setting
-	BAUD_RATE         = 9600
+	BAUD_RATE         = 1200
 )
 
 // An array with register names of the meanwell drs
@@ -44,7 +44,7 @@ type DRSClient struct {
 func NewDRSClient(port string, baud int) (*DRSClient, error) {
 	handler := modbus.NewRTUClientHandler(port)
 	handler.BaudRate = baud
-	handler.DataBits = 8
+	handler.DataBits = 7
 	handler.StopBits = 1
 	handler.Parity = "N" // For NO parity
 
