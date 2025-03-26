@@ -3,7 +3,6 @@ import {useEffect, useState} from 'react'
 
 const ModBusUI= () =>{
     const [numbers,setNumbers] = useState(Array(8).fill(""));
-    const [registers, setRegisters] = useState([]);
     const [error, setError] = useState("");
     const [ports,setPorts]=useState([])
     const [selectedPort, setSelectedPort]=useState("")
@@ -34,7 +33,7 @@ const ModBusUI= () =>{
                 .then((response) => response.json())
                 .then((data) => {
                     if (data.registers) {
-                        setRegisters(data.registers);
+                        setNumbers(data.registers)
                     } else {
                         setError("Failed to load the register values");
                     }
@@ -74,9 +73,16 @@ const ModBusUI= () =>{
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ port: selectedPort, values: numbers.map(Number) }),
         })
-            .then((res) => res.json())
-            .then((data) => console.log("Sent successfully:", data))
-            .catch((err) => console.error("Error sending data:", err));
+            .then((res) => res.json().then(data=>({state: res.status, body: data})))
+            .then(({state, body})=> {
+                if (state !== 200) {
+                    alert(`Error: ${body.error}`);
+                } else {
+                    alert("Written ✅")
+                }
+            }).catch(()=>{
+                alert("Failed request, check the console: ")
+        })
     };
 
     return (
@@ -107,7 +113,6 @@ const ModBusUI= () =>{
                                 type="number"
                                 value={numbers[index]}
                                 onChange={(e) => handleChange(index, e.target.value)}
-                                placeholder={registers[index]}
                                 style={styles.input}
                             />
                         </div>

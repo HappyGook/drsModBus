@@ -113,14 +113,12 @@ func handleSubmit(c *gin.Context) {
 		log.Println("Could not bind data: ", err)
 		return
 	}
-	log.Println("✅ Binded the json")
 
 	if len(data.Values) != len(registers) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Incorrect number of values"})
 		log.Println("Incorrect number of values")
 		return
 	}
-	log.Println("✅ Correct number of values")
 
 	drs, err := NewDRSClient(port, BAUD_RATE)
 	if err != nil {
