@@ -48,8 +48,8 @@ func NewDRSClient(port string, baud int) (*DRSClient, error) {
 	handler.DataBits = 8
 	handler.StopBits = 1
 	handler.Parity = "N" // For NO parity
-	handler.Timeout=10*time.Second
-	handler.SlaveId=131
+	handler.Timeout = 10 * time.Second
+	handler.SlaveId = 131
 
 	err := handler.Connect()
 	if err != nil {
@@ -99,6 +99,7 @@ func handleSubmit(c *gin.Context) {
 	port := c.Query("port") // Get port from query parameter
 	if port == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Port is required"})
+		log.Println("Port is required, but not received")
 		return
 	}
 
@@ -108,11 +109,13 @@ func handleSubmit(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Println("Could not bind data: ", err)
 		return
 	}
 
 	if len(data.Values) != len(registers) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Incorrect number of values"})
+		log.Println("Incorrect number of values")
 		return
 	}
 
