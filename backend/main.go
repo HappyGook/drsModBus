@@ -7,6 +7,7 @@ import (
 	"go.bug.st/serial"
 	"log"
 	"net/http"
+	"time"
 )
 
 // REGISTER ID's
@@ -19,7 +20,7 @@ const (
 	CURVE_FV_TIMEOUT  = 0x00B7 // FV charge timeout setting
 	BAT_UVP_SET       = 0x00D0 // BAT_LOW protect setting
 	Force_BAT_UVP_SET = 0x00D1 // Force BAT_LOW protect setting
-	BAUD_RATE         = 1200
+	BAUD_RATE         = 115200
 )
 
 // An array with register names of the meanwell drs
@@ -44,9 +45,11 @@ type DRSClient struct {
 func NewDRSClient(port string, baud int) (*DRSClient, error) {
 	handler := modbus.NewRTUClientHandler(port)
 	handler.BaudRate = baud
-	handler.DataBits = 7
+	handler.DataBits = 8
 	handler.StopBits = 1
 	handler.Parity = "N" // For NO parity
+	handler.Timeout=10*time.Second
+	handler.SlaveId=131
 
 	err := handler.Connect()
 	if err != nil {
@@ -139,6 +142,7 @@ func handleRead(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Port is required"})
 		return
 	}
+	log.Println("✅ Received request to read from port:", port)
 
 	drs, err := NewDRSClient(port, BAUD_RATE)
 	if err != nil {
@@ -147,6 +151,7 @@ func handleRead(c *gin.Context) {
 		return
 	}
 	defer drs.Close()
+	log.Println("✅ Successfully connected to:", port)
 
 	values, err := drs.ReadRegisters()
 	if err != nil {
@@ -155,6 +160,7 @@ func handleRead(c *gin.Context) {
 		return
 	}
 
+	log.Println("✅ Successfully read registers:", values)
 	c.JSON(http.StatusOK, gin.H{"registers": values})
 }
 
