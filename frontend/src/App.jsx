@@ -72,7 +72,7 @@ const ModBusUI= () =>{
         fetch(`/api/submit?port=${confirmed}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ port: selectedPort, values: numbers }),
+            body: JSON.stringify({ port: selectedPort, values: numbers.map(Number) }),
         })
             .then((res) => res.json())
             .then((data) => console.log("Sent successfully:", data))

@@ -102,6 +102,7 @@ func handleSubmit(c *gin.Context) {
 		log.Println("Port is required, but not received")
 		return
 	}
+	log.Println("✅ Connected to the port")
 
 	var data struct {
 		Values []uint16 `json:"values"`
@@ -112,12 +113,14 @@ func handleSubmit(c *gin.Context) {
 		log.Println("Could not bind data: ", err)
 		return
 	}
+	log.Println("✅ Binded the json")
 
 	if len(data.Values) != len(registers) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Incorrect number of values"})
 		log.Println("Incorrect number of values")
 		return
 	}
+	log.Println("✅ Correct number of values")
 
 	drs, err := NewDRSClient(port, BAUD_RATE)
 	if err != nil {
@@ -126,6 +129,7 @@ func handleSubmit(c *gin.Context) {
 		return
 	}
 	defer drs.Close()
+	log.Println("✅ Connected")
 
 	err = drs.WriteRegisters(data.Values)
 	if err != nil {
@@ -133,6 +137,7 @@ func handleSubmit(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	log.Println("✅ Written")
 
 	c.JSON(http.StatusOK, gin.H{"data": data})
 	fmt.Println("Data! :) ", data)
